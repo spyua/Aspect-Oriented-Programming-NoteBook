@@ -63,7 +63,7 @@ public class XXXService:IXXXService{
 
 ```
 
-我們直接對Service作修改，注入你自己的Log Fun，並在方法內加入Try-Catch機制，但這種方法很明顯會直接異動到原程式碼。而且基本上Log跟原本的邏輯是沒有直接性的關係，所以寫在一起也不是一個很好的方法。
+我們直接對Service作修改，注入你自己的Log Fun，並在方法內加入Try-Catch機制，但這種方法很明顯會直接異動到原程式碼。而且基本上Log跟原本的邏輯是沒有直接性的關係，所以寫在一起不是一個很好的方法。
 
 那有何方法可以不用動到裡面的程式碼加入Log呢?使原本Service保有它就是具單純處裡商業邏輯的職責?我們可以使用簡單的靜態Proxy方法去作到這件事情。
 
@@ -113,7 +113,11 @@ public class ProxyXXX : IXXXService{
 
 直接宣告一個Proxy Class去實作IXXXService方法，因為是透過Proxy，所以有機會在做執行動作的前後做介入(Try-Catch , Log)。這樣可以再不改原程式碼下，直接對原Fun加料，
 
-這種概念其實就是一種將橫切關注點（Ex:Log）與業務主體進行進一步分離。簡單來說主要是有許多程式的需求其實跟程式的邏輯沒有直接關係，但是又需要在適時插入到邏輯中，最常見的就是在程式中插入紀錄log的功能。像這類的需求可以把它稱作Aspect或是cross-cutting concern，AOP(Aspect Oriented Programming)主要的目的，就是集中處理這一類的需求，讓這一類的需求與邏輯可以拆開，但是又可以在適當的時機介入到程式邏輯中。如下圖示意，一般我們在寫程式時，很常需要處理譬如錯誤紀錄、權限驗證，乃至於額外可能增加使用者查詢歷程等等功能，我們若使用AOP概念，就不對每個方法去實做這些事情，而是猶如灰黃紅的箭頭指向，所有方法要執行時就一定得經過權限、資料與錯誤的處裡。
+這種概念其實就是一種將橫切關注點（Ex:Log）與業務主體進行進一步分離。
+
+簡單來說主要是有許多程式的需求其實跟程式的邏輯沒有直接關係，但是又需要在適時插入到邏輯中，最常見的就是在程式中插入紀錄log的功能。像這類的需求可以把它稱作Aspect或是cross-cutting concern，AOP(Aspect Oriented Programming)主要的目的，就是集中處理這一類的需求，讓這一類的需求與邏輯可以拆開，但是又可以在適當的時機介入到程式邏輯中。
+
+如下圖示意，一般我們在寫程式時，很常需要處理譬如錯誤紀錄、權限驗證，乃至於額外可能增加使用者查詢歷程等等功能，我們若使用AOP概念，就不對每個方法去實做這些事情，而是猶如灰黃紅的箭頭指向，所有方法要執行時就一定得經過權限、資料與錯誤的處裡。
 
 ![](https://i.imgur.com/8BtycBo.png)
 
@@ -124,7 +128,9 @@ public class ProxyXXX : IXXXService{
 在C#實作動態代理可以透過RealProxy與DispatchProxy兩個類別實現。前者可在一般的 .Net Framework上使用，而 .Net Core則需使用後者。 
 
 ### 實作情境
-根據[MSDN](https://reurl.cc/9Z8AmV)的Dynamic Proxy教學說明情境，我們假設情境上有個Customer Model，我們要透過Repository去操作資料。因此我們先設計基礎建設，有Customer Model與Repository相關實作，Repository就作一般的CRUD操作。
+根據[MSDN](https://reurl.cc/9Z8AmV)的Dynamic Proxy教學說明情境，我們假設情境上有個Customer Model，我們要透過Repository去操作資料。
+
+因此我們先針對Context設計基礎建設，有Customer Model與Repository相關實作，Repository就作一般的CRUD操作。
 
 ![](https://i.imgur.com/rMm9vtf.png)
 
@@ -385,7 +391,7 @@ Console.ReadLine();
 
 #### Repositroy加入Log
 
-根據上述範例，我們使用DispatchProxy在實作一次。DispatchProxy操作起來差不多，只是除了要實作Invoke外，對於Create Class Instance那段我們也需要額外實作(Decorate)。
+根據上述範例，我們使用DispatchProxy再實作一次。DispatchProxy操作起來差不多，只是除了要實作Invoke外，對於Create Class Instance那段我們也需要額外實作(Decorate)。
 
 ```csharp=
 public class DynamicProxy<T> : DispatchProxy where T : class
@@ -530,7 +536,7 @@ public class RepositoryFactory
         }
 }
 ```
-Client使用不便
+Client使用不變
 
 ```csharp=
 var messageDispatchProxy = RepositoryFactory.Create<Customer>();
@@ -552,7 +558,7 @@ messageDispatchProxy.Delete(customer);
 
 目前對於AOP， .Net Core已經有現成的Solution Framework可以使用。叫[AspectCore](https://github.com/dotnetcore/AspectCore-Framework)。針對AspectCore，個人覺得使用上Neil Tsai的[AspectCore｜.Net Core 輕量AOP實現](https://reurl.cc/l066D9)算解說的蠻清楚的。不過我再根據上述微軟MSDN教學描述的Context作延續使用。
 
-上述我們提到在使用動態Proxy使用Repository撈取Custmoer資料。接下來我們在Web上使用AspectCore去達到這件事情。在Web架構上我們以常見的集中式架構設計，撰寫Customer Service取使用Repository。並使用AspCore，在Controller呼叫Service時，增加Log顯示。
+上述我們提到在使用動態Proxy使用Repository撈取Custmoer資料。接下來我們在Web上使用AspectCore去達到這件事情。在Web架構上我們以常見的集中式架構去作設計，撰寫Customer Service取使用Repository。並使用AspCore，在Controller呼叫Service時，增加Log顯示。
 
 ### Step1:新增Web MVC專案
 我們使用Visual Studio新增一MVC專案，過程沒什麼其他特別設定，這邊起始新增專案就不多加描述。
@@ -730,6 +736,10 @@ public IActionResult Privacy()
 
 ![](https://i.imgur.com/HBNR8Ie.png)
 
+
+## Summary
+
+此篇大致整理AOP的使用情境與方法，也對於AspCore使用方式簡單實作一個Demo。希望對於未聽過與使用過的人可以快速對於AOP概念有所了解。
 
 ## 參考
 
